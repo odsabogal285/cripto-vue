@@ -1,6 +1,7 @@
 <script setup>
-  import {ref, onMounted, reactive} from "vue";
+  import {ref, onMounted, reactive, computed} from "vue";
   import Alerta from "./components/Alerta.vue";
+  import Spinner from "./components/Spinner.vue";
 
   const monedas = ref([
     { codigo: 'USD', texto: 'Dolar de Estados Unidos'},
@@ -11,10 +12,15 @@
   ]);
 
   const criptomonedas = ref([]);
+  const error = ref('');
+
   const cotizar = reactive({
     moneda: '',
     criptomoneda: ''
-  })
+  });
+
+  const cotizacion = ref({});
+  const cargando = ref(false);
 
   onMounted(() => {
     const url = 'https://min-api.cryptocompare.com/data/top/mktcapfull?limit=20&tsym=USD';
@@ -27,10 +33,33 @@
 
   const cotizarCripto = () => {
     if (Object.values(cotizar).includes('')) {
-        console.log('Todos lo campos son obligatorios');
+      error.value = 'Todos lo campos son obligatorios';
+      return
+    }
+    error.value = '';
+    obtenerCotizacion();
+  }
+
+  const obtenerCotizacion = async () => {
+    cargando.value = true;
+    cotizacion.value = {};
+    try {
+      const {moneda, criptomoneda} = cotizar;
+      const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${criptomoneda}&tsyms=${moneda}`;
+      const respuesta = await fetch(url);
+      const data = await respuesta.json();
+
+      cotizacion.value = data.DISPLAY[criptomoneda][moneda];
+    } catch (error) {
+      console.log(error)
+    } finally {
+      cargando.value = false;
     }
   }
 
+  const mostrarResultado = computed(() => {
+    return Object.values(cotizacion.value).length > 0
+  });
 </script>
 
 <template>
@@ -38,6 +67,9 @@
       <h1 class="titulo">Cotizador de <span>criptomonedas</span></h1>
 
       <div class="contenido">
+        <Alerta v-if="error">
+          {{error}}
+        </Alerta>
         <form
             class="formulario"
             @submit.prevent="cotizarCripto"
@@ -68,6 +100,22 @@
           </div>
           <input type="submit" value="Cotizar">
         </form>
+        <Spinner v-if="cargando"></Spinner>
+        <div class="contenedor-resultado" v-if="mostrarResultado">
+          <h2> Cotización </h2>
+          <div class="resultado">
+            <img
+                :src="'https://cryptocompare.com/' + cotizacion.IMAGEURL"
+                alt="imagen cripto">
+            <div>
+              <p>El precio es de: <span>{{cotizacion.PRICE}}</span></p>
+              <p>Precio más alto del día: <span>{{cotizacion.HIGHDAY}}</span></p>
+              <p>Precio más bajo del día: <span>{{cotizacion.LOWDAY}}</span></p>
+              <p>Variación ultimas 24 horas: <span>{{cotizacion.CHANGEPCT24HOUR}}%</span></p>
+              <p>Última Actualización: <span>{{cotizacion.LASTUPDATE}}</span></p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 </template>
