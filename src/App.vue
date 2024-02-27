@@ -3,6 +3,7 @@
   import Alerta from "./components/Alerta.vue";
   import Spinner from "./components/Spinner.vue";
   import useCripto from "./composables/useCripto.js";
+  import Cotizacion from "./components/Cotizacion.vue";
 
   const { monedas, criptomonedas, cargando, cotizacion, obtenerCotizacion, mostrarResultado} = useCripto();
 
@@ -63,25 +64,10 @@
           <input type="submit" value="Cotizar">
         </form>
         <Spinner v-if="cargando"></Spinner>
-        <div class="contenedor-resultado" v-if="mostrarResultado">
-          <h2> Cotización </h2>
-          <div class="resultado">
-            <img
-                :src="'https://cryptocompare.com/' + cotizacion.IMAGEURL"
-                alt="imagen cripto">
-            <div>
-              <p>El precio es de: <span>{{cotizacion.PRICE}}</span></p>
-              <p>Precio más alto del día: <span>{{cotizacion.HIGHDAY}}</span></p>
-              <p>Precio más bajo del día: <span>{{cotizacion.LOWDAY}}</span></p>
-              <p>Variación ultimas 24 horas: <span>{{cotizacion.CHANGEPCT24HOUR}}%</span></p>
-              <p>Última Actualización: <span>{{cotizacion.LASTUPDATE}}</span></p>
-            </div>
-          </div>
-        </div>
+        <Cotizacion
+            v-if="mostrarResultado"
+            :cotizacion="cotizacion"
+        ></Cotizacion>
       </div>
     </div>
 </template>
-
-<style scoped>
-
-</style>
